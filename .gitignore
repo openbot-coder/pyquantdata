@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# WorkBuddy 项目记忆（不进公开仓库）
+.workbuddy/
+
+# quantdata dbpath 运行产物（测试/开发期）
+tmp-db/
+ci-db/
+*.duckdb
+*.duckdb.wal
+quantdata.lock
+exports/
+
+# pytest tmp / 临时目录
+.pytest_tmp/
+.pytest_basetemp/
+
+# IDE
+.idea/
+.vscode/

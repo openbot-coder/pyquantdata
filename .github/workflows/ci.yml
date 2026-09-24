@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      # ref 均经 raw.githubusercontent.com 核验存在（2026-09-24）
+      - uses: actions/checkout@v7
+
+      # 3.13：与 .python-version / requires-python 一致。
+      # 注意不要用 3.14 —— 该版本 Windows 的 asyncio socketpair 回退分支会死锁。
+      - uses: astral-sh/setup-uv@v10.1.0
+        with:
+          python-version: "3.13"
+          enable-cache: true
+
+      - name: Install
+        run: uv sync --frozen
+
+      - name: Lint imports (smoke)
+        run: uv run python -c "import pyquantdata.cli; import pyquantdata.serve.app; import pyquantdata.store.migrations"
+
+      - name: Test (coverage 100% gate)
+        run: uv run pytest --cov=pyquantdata --cov-report=term-missing --cov-fail-under=100
+
+      # [CI] 验收链（§14 两层验收的第一层）：全程离线 —— init --skip-history + 迷你
+      # seed → serve → POST /v1/query 查日K → export csv。真网 uvicorn / 真数据
+      # 归 [夜间] 层，见 nightly.yml。
+      - name: Verify CI fixture integrity
+        run: uv run python tests/fixtures/build_ci_fixture.py --check
+
+      - name: Acceptance chain — init (skip history + mini seed)
+        run: |
+          uv run quantdata init -d ci-db --skip-history --seed tests/fixtures/ci_seed_1d.parquet
+          uv run quantdata status -d ci-db --json
+
+      - name: Acceptance chain — serve + query + export
+        shell: bash
+        run: |
+          set -euo pipefail
+          # 显式 bypass 代理：环境里若挂了 http_proxy 且指向不可用地址，
+          # curl 连 127.0.0.1 也会超时，被误判成「服务没起来」。
+          export NO_PROXY=127.0.0.1,localhost
+          export no_proxy=127.0.0.1,localhost
+          CURL="curl -fsS --noproxy 127.0.0.1"
+
+          uv run quantdata serve -d ci-db --port 18765 &
+          SERVE_PID=$!
+          trap 'kill $SERVE_PID 2>/dev/null || true' EXIT
+
+          for i in $(seq 1 60); do
+            if curl -fsS --noproxy 127.0.0.1 http://127.0.0.1:18765/healthz >/dev/null 2>&1; then break; fi
+            sleep 0.5
+          done
+          $CURL http://127.0.0.1:18765/healthz; echo
+          $CURL http://127.0.0.1:18765/v1/ready; echo
+
+          # 日K 查询（POST /v1/query）
+          $CURL -X POST http://127.0.0.1:18765/v1/query \
+            -H 'Content-Type: application/json' \
+            -d '{"sql":"SELECT count(*) AS n FROM cn_stock_1d"}' | tee /tmp/q.json; echo
+          grep -q '"row_count": 1' /tmp/q.json
+
+          # 导出 csv（全链路：SQL 闸 → 只读执行 → exports/{job_id}/ 落盘）
+          $CURL -X POST http://127.0.0.1:18765/v1/export \
+            -H 'Content-Type: application/json' \
+            -d '{"sql":"SELECT symbol, date, close FROM cn_stock_1d ORDER BY date","fmt":"csv","filename":"ci_daily.csv"}' \
+            -o /tmp/ci_daily.csv
+          head -1 /tmp/ci_daily.csv
+          test "$(wc -l < /tmp/ci_daily.csv)" -eq 21   # 表头 + 20 行
+          test -f ci-db/exports/*/ci_daily.csv
+
+          # SQL 闸 fail-closed：恶意查询必须 400
+          code=$(curl -s -o /dev/null -w '%{http_code}' --noproxy 127.0.0.1 \
+            -X POST http://127.0.0.1:18765/v1/query \
+            -H 'Content-Type: application/json' \
+            -d '{"sql":"SELECT read_parquet('"'"'/etc/passwd'"'"')"}')
+          echo "sqlgate status=$code"
+          test "$code" = "400"
+
+          # 停服后端口必须释放
+          kill $SERVE_PID 2>/dev/null || true
+          wait $SERVE_PID 2>/dev/null || true
+          if curl -fsS --max-time 3 --noproxy 127.0.0.1 http://127.0.0.1:18765/healthz >/dev/null 2>&1; then
+            echo "端口未释放"; exit 1
+          fi
+          echo "acceptance chain OK"
