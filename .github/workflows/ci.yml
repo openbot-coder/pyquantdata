@@ -68,7 +68,9 @@ jobs:
           $CURL -X POST http://127.0.0.1:18765/v1/query \
             -H 'Content-Type: application/json' \
             -d '{"sql":"SELECT count(*) AS n FROM cn_stock_1d"}' | tee /tmp/q.json; echo
-          grep -q '"row_count": 1' /tmp/q.json
+          # FastAPI/JSON 序列化输出为 "row_count":1（冒号后无空格）；
+          # 用 ? 兼容两种形式，避免断言与序列化器空格习惯耦合。
+          grep -qE '"row_count": ?1' /tmp/q.json
 
           # 导出 csv（全链路：SQL 闸 → 只读执行 → exports/{job_id}/ 落盘）
           $CURL -X POST http://127.0.0.1:18765/v1/export \
