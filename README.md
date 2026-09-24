@@ -2,7 +2,7 @@
 
 单目录自包含、三市场（A/美/港）覆盖的量化数据中台：`init` 建库回填，`serve` 常驻更新 + FastAPI 对外服务，一切状态收敛在 `-d` 指定的 dbpath。
 
-设计方案见 [docs/quantdata-design.md](docs/quantdata-design.md)（v0.7，圆桌评审 45 条已采纳）。
+设计方案见 [docs/quantdata-design.md](https://github.com/openbot-coder/pyquantdata/blob/main/docs/quantdata-design.md)（v0.7，圆桌评审 45 条已采纳）。
 
 ## 当前状态：M1 最小闭环
 

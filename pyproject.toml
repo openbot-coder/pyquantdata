@@ -6,8 +6,22 @@ readme = "README.md"
 # 排除 3.14：该版本 Windows 上 asyncio ProactorEventLoop 的 socket.socketpair()
 # 回退分支会死锁（asyncio.run 建 loop 即挂），serve 常驻与全部异步测试不可用。
 requires-python = ">=3.11,<3.14"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "openbot-coder" }]
+keywords = ["quant", "market-data", "duckdb", "stock", "kline", "backtest-data"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Topic :: Database :: Front-Ends",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Financial and Insurance Industry",
+]
+
 dependencies = [
     "duckdb>=1.1",
     "fastapi>=0.115",
@@ -26,6 +40,12 @@ dependencies = [
 
 [project.scripts]
 quantdata = "pyquantdata.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/openbot-coder/pyquantdata"
+Repository = "https://github.com/openbot-coder/pyquantdata"
+Documentation = "https://github.com/openbot-coder/pyquantdata/blob/main/docs/quantdata-design.md"
+Issues = "https://github.com/openbot-coder/pyquantdata/issues"
 
 [dependency-groups]
 dev = [
