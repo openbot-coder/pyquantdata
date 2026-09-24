@@ -7,6 +7,10 @@ on:
 
 jobs:
   test:
+    # Windows runner 的 stdout 默认 cp1252，Python print 中文/全角标点
+    # 会 UnicodeEncodeError。UTF-8 mode 统一两平台行为（Linux 上无副作用）。
+    env:
+      PYTHONUTF8: "1"
     strategy:
       fail-fast: false
       matrix:
