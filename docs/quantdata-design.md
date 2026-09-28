@@ -8,6 +8,7 @@
 **修订**：v0.5 —— 放弃 NATS（宝爷拍板 A 方案）：对外服务改为 serve 进程内 FastAPI —— REST 管 query/export/meta/stats，WebSocket `/v1/stream` 管订阅推送（quote/state/news/flow/ev）；`--no-http` 纯 CLI  
 **修订**：v0.6 —— 圆桌评审 45 条全采纳（6 席全票「修改后可实施」）：新增 §7.6 事件循环隔离、SQL 函数默认拒绝、compaction 两阶段 .trash 协议、覆盖率排除白名单、验收数据两层、qlib 测试两层、news 表 DDL、复权口径、WS 统一时序、export 同步/异步归位  
 **修订**：v0.7 —— M1 实施校准 3 条（实施阶段才暴露、评审阶段发现不了的）：DP-1 §11 锁判活从「三元一致」改为可实现的「PID 存活 + 三元全可读且一致」，后两项降为补强证据、取不到即接管（否则锁死库）；DP-2 §14 白名单「CI 自己真起服」表述纠偏 —— CI 的真是**用 CLI 起真 serve + 真端口 curl**（用户面全覆盖），仅 `runtime.py` uvicorn/socket 段 pragma 豁免，真起服交付自检交每周 smoke；DP-3 §14 验收 fixture 表名笔误（`cn_stock_1d` 实为 `bars_1d`，视图名≠物理表名）。  
+**实现状态**：2026-09-24 **M1 已交付，发布 PyPI `pyquantdata==0.1.0`**（254 测试 100% 覆盖、CI 双平台真起服验收链绿、release.yml OIDC 自动发布）。落地明细与功能清单见 §15 实现状态附记及 [README](https://github.com/openbot-coder/pyquantdata/blob/main/README.md)。  
 **定位**：单目录自包含、三市场（A/美/港）覆盖的量化数据中台 —— `init` 建库回填，`serve` 常驻更新 + 每日质检 + 通过 FastAPI（REST+WebSocket）对外服务。
 
 ---
@@ -662,9 +663,11 @@ news-integration collectors（RSS 等）→ 归一化（统一 NewsItem schema +
 
 ## 15. 分阶段路线图
 
+> **实现状态（2026-09-24 更新）**：**M1 已交付并发布 PyPI `pyquantdata==0.1.0`**（GitHub Actions release.yml 自动构建 + OIDC Trusted Publishing）。落地对照：CLI 六命令（init/serve/update/query/export/status，比原计划多出 `export` 与 `status` 独立命令）、14 业务表 + 8 联邦视图、REST **8 端点**（原计划的 query/export 外，meta/stats/state/ready/export-job 均已实现）、Bearer 鉴权、SQL 闸本地/HTTP 同规则、254 测试 100% 覆盖率、CI 双平台真起服验收链。M1 未含（对应下方 M2–M4）：backfill/doctor 命令、1m 数据、美/港实际写入、WS 推流。功能清单以 [README](https://github.com/openbot-coder/pyquantdata/blob/main/README.md) 为准。
+
 | 里程碑           | 交付物                                                                                                                    | 验收标准                                                                  |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| **M1 最小闭环** | CLI 骨架（init/serve/query/update/status）、目录规范、schema+migrations、A股证券信息+日历+日K、FastAPI + `POST /v1/query`、csv/parquet/pandas 导出 | **[CI]** `init --skip-history`+迷你 seed → CLI 起真 `serve` → 真端口 `POST /v1/query` 查到日K → export csv 一条链必绿（含 SQL 闸 400 fail-closed 断言）；单测覆盖核心逻辑 + `--cov-fail-under=100` |
+| **M1 最小闭环 ✅ 已交付（v0.1.0）** | CLI 骨架（init/serve/query/update/status）、目录规范、schema+migrations、A股证券信息+日历+日K、FastAPI + `POST /v1/query`、csv/parquet/pandas 导出 | **[CI]** `init --skip-history`+迷你 seed → CLI 起真 `serve` → 真端口 `POST /v1/query` 查到日K → export csv 一条链必绿（含 SQL 闸 400 fail-closed 断言）；单测覆盖核心逻辑 + `--cov-fail-under=100` —— **达成：254 passed / 100% / CI 双平台绿** |
 | **M2 A股完整**   | 1m 回填（seed 导入 + 断点续传）、compaction、除权/ST/停牌/涨跌停/申万行业、公告研报、每日质检、qlib+backtrader 导出、市场状态机                                  | A股数据矩阵全 ✅ **[夜间]**；qlib extra job 实读 + backtrader 单测 **[CI]**；质检连续 7 天绿 **[手工]**                          |
 | **M3 三市场+推流** | 美/港股日线+1m（时区调度）、快照/tick WS 推流、分钟新闻桥、token 鉴权开放内网、export 远端下载 | 三市场矩阵定稿；三市场 1m 回填完成度 ≥99% 交易日 **[夜间]**；从另一台机器完成 query/订阅/导出全流程演练 **[手工]** |
 | **M4 运维加固**   | 陈旧锁恢复、stats 完整化、备份文档、Linux supervisord 部署物（主）+ Windows 本机跑法（次）、README/协议文档、双源对账常态化、**quantdata-client 薄 SDK + `GET /v1/bars` 糖（可选）** | 连续运行 2 周无人工干预 **[手工]**；`doctor` 全绿；覆盖率白名单复审                                             |
