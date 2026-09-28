@@ -92,6 +92,29 @@ def test_query_csv_to_file(initialized, tmp_path):
     assert out.exists()
 
 
+def test_query_arrow_to_file(initialized, tmp_path):
+    """query --fmt arrow 落盘 = Arrow IPC **file** 格式（0.1.0 bug 回归）。
+
+    原实现把 arrow 透传给只认 csv/parquet 的 write_export → ExportFormatError
+    裸 traceback；修复后必须写出可被 open_file 随机重开的 footer 完整文件。
+    """
+    out = tmp_path / "q.arrow"
+    result = runner.invoke(app, [
+        "query", "-d", str(initialized), "--fmt", "arrow", "-o", str(out),
+        "SELECT symbol, close FROM cn_stock_1d",
+    ])
+    assert result.exit_code == 0, result.output
+    assert "已写出" in result.output
+    assert out.exists() and out.stat().st_size > 0
+    import pyarrow as pa
+    import pyarrow.ipc as pai
+
+    with pai.open_file(out) as reader:  # file 格式（footer 随机访问），非 stream
+        tbl = reader.read_all()
+    assert tbl.num_rows == 10
+    assert tbl.schema.names == ["symbol", "close"]
+
+
 def test_query_csv_without_out_exit_1(initialized):
     result = runner.invoke(app, [
         "query", "-d", str(initialized), "--fmt", "csv", "SELECT 1",

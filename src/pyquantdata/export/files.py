@@ -93,6 +93,21 @@ def write_export(table: pa.Table, fmt: str, target: Path) -> ExportResult:
     return ExportResult(path=target, rows=table.num_rows, bytes_written=size, fmt=fmt)
 
 
+def write_arrow_file(table: pa.Table, target: Path) -> ExportResult:
+    """``query --fmt arrow -o`` 专用：Arrow IPC **file** 格式落盘。
+
+    与 HTTP ``/v1/query`` 的 ``b64_arrow``（streaming format）刻意区分：
+    落盘产物要给 ``polars.read_ipc`` / ``pyarrow.ipc.open_file`` 随时重开，
+    file 格式带 footer 与随机访问；streaming 只适合一次性管道传输。
+    不进 ``EXPORT_FORMATS`` —— 那是 export 命令 / HTTP export 的语义（csv/parquet）。
+    """
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with pa.ipc.new_file(target, table.schema) as writer:
+        writer.write_table(table)
+    size = target.stat().st_size
+    return ExportResult(path=target, rows=table.num_rows, bytes_written=size, fmt="arrow")
+
+
 def record_export_job(
     conn: duckdb.DuckDBPyConnection,
     job_id: str,

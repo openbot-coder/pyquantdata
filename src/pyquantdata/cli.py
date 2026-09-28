@@ -22,6 +22,7 @@ from .config import AppConfig, default_config, load_config, write_config
 from .etl import SeedError, import_seed
 from .export.files import (
     EXPORT_FORMATS,
+    write_arrow_file,
     write_export,
 )
 from .paths import DbPathLayout, resolve_dbpath
@@ -247,7 +248,13 @@ def query(
                 )
             )
         else:
-            result = write_export(tbl, "csv" if fmt == "csv" else fmt, Path(o))
+            # arrow 单走 IPC file 落盘（write_export 仅 csv/parquet，直接调会抛
+            # ExportFormatError —— 0.1.0 实测 bug，此处曾把 arrow 透传进去）
+            result = (
+                write_arrow_file(tbl, Path(o))
+                if fmt == "arrow"
+                else write_export(tbl, fmt, Path(o))
+            )
             console.print(f"[green]已写出[/green] {result.path}（{result.rows} 行 / {result.bytes_written} 字节）")
     finally:
         conn.close()
