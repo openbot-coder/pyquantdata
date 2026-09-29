@@ -8,7 +8,7 @@
 **修订**：v0.5 —— 放弃 NATS（宝爷拍板 A 方案）：对外服务改为 serve 进程内 FastAPI —— REST 管 query/export/meta/stats，WebSocket `/v1/stream` 管订阅推送（quote/state/news/flow/ev）；`--no-http` 纯 CLI  
 **修订**：v0.6 —— 圆桌评审 45 条全采纳（6 席全票「修改后可实施」）：新增 §7.6 事件循环隔离、SQL 函数默认拒绝、compaction 两阶段 .trash 协议、覆盖率排除白名单、验收数据两层、qlib 测试两层、news 表 DDL、复权口径、WS 统一时序、export 同步/异步归位  
 **修订**：v0.7 —— M1 实施校准 3 条（实施阶段才暴露、评审阶段发现不了的）：DP-1 §11 锁判活从「三元一致」改为可实现的「PID 存活 + 三元全可读且一致」，后两项降为补强证据、取不到即接管（否则锁死库）；DP-2 §14 白名单「CI 自己真起服」表述纠偏 —— CI 的真是**用 CLI 起真 serve + 真端口 curl**（用户面全覆盖），仅 `runtime.py` uvicorn/socket 段 pragma 豁免，真起服交付自检交每周 smoke；DP-3 §14 验收 fixture 表名笔误（`cn_stock_1d` 实为 `bars_1d`，视图名≠物理表名）。  
-**实现状态**：2026-09-24 **M1 已交付，发布 PyPI `pyquantdata==0.1.0`**（254 测试 100% 覆盖、CI 双平台真起服验收链绿、release.yml OIDC 自动发布）。落地明细与功能清单见 §15 实现状态附记及 [README](https://github.com/openbot-coder/pyquantdata/blob/main/README.md)。  
+**实现状态**：2026-09-24 **M1 已交付，发布 PyPI `pyquantdata==0.1.0`**（254 测试 100% 覆盖、CI 双平台真起服验收链绿、release.yml OIDC 自动发布）。2026-09-29 升 **0.1.1**（修复 `query --fmt arrow -o` 落盘崩溃 + README 全量补全已实现功能，255 测试 100%）。落地明细与功能清单见 §15 实现状态附记及 [README](https://github.com/openbot-coder/pyquantdata/blob/main/README.md)。  
 **定位**：单目录自包含、三市场（A/美/港）覆盖的量化数据中台 —— `init` 建库回填，`serve` 常驻更新 + 每日质检 + 通过 FastAPI（REST+WebSocket）对外服务。
 
 ---

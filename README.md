@@ -7,9 +7,9 @@
 
 单目录自包含的量化数据中台：`init` 建库，`update` 回填，`query`/`export` 只读消费，`serve` 常驻 + FastAPI 对外服务——一切状态收敛在 `-d` 指定的 dbpath，可整体拷贝/备份。
 
-**当前版本 0.1.0（M1 最小闭环）**，已发布 [PyPI](https://pypi.org/project/pyquantdata/)。设计方案见 [docs/quantdata-design.md](https://github.com/openbot-coder/pyquantdata/blob/main/docs/quantdata-design.md)（v0.7，圆桌评审 45 条已采纳）。
+**当前版本 0.1.1（M1 最小闭环 + arrow 落盘修复）**，已发布 [PyPI](https://pypi.org/project/pyquantdata/)。设计方案见 [docs/quantdata-design.md](https://github.com/openbot-coder/pyquantdata/blob/main/docs/quantdata-design.md)（v0.7，圆桌评审 45 条已采纳）。
 
-## 已实现功能（0.1.0）
+## 已实现功能
 
 | 能力 | 说明 |
 |---|---|
@@ -25,7 +25,7 @@
 ## 安装
 
 ```bash
-uv pip install pyquantdata     # PyPI（0.1.0）
+uv pip install pyquantdata     # PyPI
 # 或开发模式
 git clone git@github.com:openbot-coder/pyquantdata.git && cd pyquantdata && uv sync
 ```
@@ -193,7 +193,7 @@ src/pyquantdata/
 
 ## 路线图（设计 §15）
 
-- **M1 ✅** 最小闭环（本仓库当前状态，v0.1.0）
+- **M1 ✅** 最小闭环（v0.1.0 交付；0.1.1 = 修复 + 文档，当前状态）
 - **M2** 1m 回填 + compaction + 除权/ST/涨跌停 + 每日质检 + qlib/backtrader 导出
 - **M3** 美/港三市场实际回填 + WS 推流（快照/状态/新闻）
 - **M4** 运维加固（supervisord 部署、doctor、薄 SDK）

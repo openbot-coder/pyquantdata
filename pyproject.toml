@@ -1,6 +1,6 @@
 [project]
 name = "pyquantdata"
-version = "0.1.0"
+version = "0.1.1"
 description = "quantdata: 单目录自包含的量化数据中台 CLI（A股/美股/港股），init 建库回填，serve 常驻更新 + FastAPI 对外服务"
 readme = "README.md"
 # 排除 3.14：该版本 Windows 上 asyncio ProactorEventLoop 的 socket.socketpair()
